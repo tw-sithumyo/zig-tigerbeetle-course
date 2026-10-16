@@ -1,0 +1,6 @@
+.tools/
+.data/
+node_modules/
+.zig-cache/
+zig-out/
+*.log

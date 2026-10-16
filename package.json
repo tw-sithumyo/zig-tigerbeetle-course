@@ -1,0 +1,17 @@
+{
+  "name": "zig-forge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An offline, local-first Zig learning workshop with real compiler feedback.",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "setup": "node scripts/install-zig.mjs",
+    "setup:tigerbeetle": "node scripts/install-tigerbeetle.mjs",
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:course": "node scripts/check-course.mjs",
+    "test:tigerbeetle": "node scripts/check-tigerbeetle.mjs"
+  }
+}
