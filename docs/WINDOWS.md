@@ -1,4 +1,4 @@
-# Run Zig Forge locally on Windows
+# Run Zig TigerBeetle Course locally on Windows
 
 Use **WSL2 with Ubuntu** for the complete Zig and TigerBeetle experience. The app, compilers, database replicas, and tests run on your own Windows computer inside WSL2; you use your normal Windows browser at **http://localhost:3030**. Nothing is deployed to a remote server.
 
@@ -12,7 +12,7 @@ Use **WSL2 with Ubuntu** for the complete Zig and TigerBeetle experience. The ap
 | Real upstream TigerBeetle build/test | Separate upstream Linux compiler | Native setup is not implemented in this app |
 | Bubblewrap isolation | Used when supported; otherwise native WSL processes | Unavailable; programs use your Windows account permissions |
 
-The Linux application and both course environments have been tested. **These Windows/WSL2 instructions have been checked against the installers and official platform documentation, but have not been executed on a Windows machine.** TigerBeetle itself provides Windows development binaries; the native limitation above is in Zig Forge's current installer and lab setup.
+The Linux application and both course environments have been tested. **These Windows/WSL2 instructions have been checked against the installers and official platform documentation, but have not been executed on a Windows machine.** TigerBeetle itself provides Windows development binaries; the native limitation above is in Zig TigerBeetle Course's current installer and lab setup.
 
 ## Full setup: WSL2 + Ubuntu
 
@@ -52,8 +52,8 @@ sudo apt install -y git curl ca-certificates unzip xz-utils tar bubblewrap rsync
 Install **Linux Node.js 24 LTS** using nvm. Windows Node.js is a separate installation and should not be used for the WSL workflow. The pinned nvm installer below comes from the official nvm project:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh -o /tmp/zig-forge-nvm-install.sh
-bash /tmp/zig-forge-nvm-install.sh
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh -o /tmp/zig-tigerbeetle-course-nvm-install.sh
+bash /tmp/zig-tigerbeetle-course-nvm-install.sh
 export NVM_DIR="$HOME/.nvm"
 . "$NVM_DIR/nvm.sh"
 nvm install 24
@@ -77,30 +77,30 @@ The simplest option is to clone the published repository directly inside Ubuntu:
 ```bash
 mkdir -p ~/projects
 cd ~/projects
-git clone https://github.com/stmSi/zig-tigerbeetle-course.git zig-forge
-cd zig-forge
+git clone https://github.com/tw-sithumyo/zig-tigerbeetle-course.git zig-tigerbeetle-course
+cd zig-tigerbeetle-course
 ```
 
 Then continue with step 4. This public HTTPS clone does not need a GitHub login. If you prefer to transfer an existing local copy, use the following alternative.
 
-Copy this project's source folder to **C:\Projects\zig-forge** on Windows. This means the `zig-forge` folder containing `package.json`, `server.mjs`, `public`, `lib`, `scripts`, and `docs`—the `/home/stm/...` path from the main README belongs to the original Linux machine and is not a Windows path.
+Copy this project's source folder to **C:\Projects\zig-tigerbeetle-course** on Windows. This means the `zig-tigerbeetle-course` folder containing `package.json`, `server.mjs`, `public`, `lib`, `scripts`, and `docs`—the `/home/stm/...` path from the main README belongs to the original Linux machine and is not a Windows path.
 
 Then, in Ubuntu, copy the source into its Linux filesystem:
 
 ```bash
-mkdir -p ~/projects/zig-forge
-rsync -a --exclude='.tools/' --exclude='.data/' --exclude='node_modules/' --exclude='.git/' /mnt/c/Projects/zig-forge/ ~/projects/zig-forge/
-cd ~/projects/zig-forge
+mkdir -p ~/projects/zig-tigerbeetle-course
+rsync -a --exclude='.tools/' --exclude='.data/' --exclude='node_modules/' --exclude='.git/' /mnt/c/Projects/zig-tigerbeetle-course/ ~/projects/zig-tigerbeetle-course/
+cd ~/projects/zig-tigerbeetle-course
 ```
 
-Adjust `/mnt/c/Projects/zig-forge/` if you put the Windows copy elsewhere. Keep the working copy, compiler caches, and TigerBeetle data files under `~/projects/zig-forge`, rather than running the database/build from `/mnt/c`. This follows [Microsoft's guidance to keep Linux Node projects in the Linux filesystem](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl).
+Adjust `/mnt/c/Projects/zig-tigerbeetle-course/` if you put the Windows copy elsewhere. Keep the working copy, compiler caches, and TigerBeetle data files under `~/projects/zig-tigerbeetle-course`, rather than running the database/build from `/mnt/c`. This follows [Microsoft's guidance to keep Linux Node projects in the Linux filesystem](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl).
 
 Toolchains and caches should be installed again for the target OS/architecture. **Do not copy `.tools` or build/database caches from another machine into this installation.** If you want your old progress, copy only its `.data/progress.json` separately as explained below.
 
 ### 4. Install both environments and start — Ubuntu terminal
 
 ```bash
-cd ~/projects/zig-forge
+cd ~/projects/zig-tigerbeetle-course
 npm run setup
 npm run setup:tigerbeetle
 npm start
@@ -122,7 +122,7 @@ In the app's **Environment** dialog, check for course Zig 0.17.0, TigerBeetle 0.
 Open Ubuntu and run:
 
 ```bash
-cd ~/projects/zig-forge
+cd ~/projects/zig-tigerbeetle-course
 nvm use 24
 npm start
 ```
@@ -144,11 +144,11 @@ The TigerBeetle checks use real disposable replicas and a real upstream test bui
 This route covers the web interface, quizzes, Zig/TigerStyle exercises, and Zig playground. **Use WSL2 for the complete TigerBeetle path.** The native Zig setup has not been executed on Windows during this project's verification.
 
 1. Install the Windows **Node.js LTS** installer for your architecture from [nodejs.org](https://nodejs.org/en/download). Use Node 22.13 or newer. Close and reopen PowerShell after installation.
-2. Copy the project source into **C:\Projects\zig-forge**, without copying `.tools`, compiler caches, or disposable database files from Linux/macOS. Alternatively, with Git for Windows installed, run `git clone https://github.com/stmSi/zig-tigerbeetle-course.git C:\Projects\zig-forge` in PowerShell.
+2. Copy the project source into **C:\Projects\zig-tigerbeetle-course**, without copying `.tools`, compiler caches, or disposable database files from Linux/macOS. Alternatively, with Git for Windows installed, run `git clone https://github.com/tw-sithumyo/zig-tigerbeetle-course.git C:\Projects\zig-tigerbeetle-course` in PowerShell.
 3. In a normal PowerShell window, run:
 
 ```powershell
-Set-Location C:\Projects\zig-forge
+Set-Location C:\Projects\zig-tigerbeetle-course
 node --version
 node -p "process.platform"
 npm.cmd run setup
@@ -188,14 +188,14 @@ Then open **http://localhost:3031**. Use a port not occupied by a Windows or WSL
 
 ## Progress and backups
 
-The working installation saves code and progress in `.data/progress.json` under its project folder. For WSL, that is `~/projects/zig-forge/.data/progress.json`. **Export progress** in the app saves a JSON backup through your Windows browser.
+The working installation saves code and progress in `.data/progress.json` under its project folder. For WSL, that is `~/projects/zig-tigerbeetle-course/.data/progress.json`. **Export progress** in the app saves a JSON backup through your Windows browser.
 
-To move existing progress, stop the destination app, create its `.data` directory if necessary, and copy your old `progress.json` or exported `zig-forge-progress.json` there as **progress.json**. Back up an existing destination file before replacing it. Start the app again. The progress file is portable across platforms; compiled tools and caches are not. Do not run two app servers against the same progress file.
+To move existing progress, stop the destination app, create its `.data` directory if necessary, and copy your old `progress.json` or exported `zig-tigerbeetle-course-progress.json` there as **progress.json**. Back up an existing destination file before replacing it. Start the app again. The progress file is portable across platforms; compiled tools and caches are not. Do not run two app servers against the same progress file.
 
 You can open the WSL project in Windows File Explorer from Ubuntu with:
 
 ```bash
-cd ~/projects/zig-forge
+cd ~/projects/zig-tigerbeetle-course
 explorer.exe .
 ```
 

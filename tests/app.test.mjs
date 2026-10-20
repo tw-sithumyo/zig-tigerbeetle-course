@@ -11,7 +11,7 @@ import { runCode, environment } from '../lib/runner.mjs';
 
 let directory, server, base, session;
 before(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), 'zig-forge-test-'));
+  directory = await mkdtemp(path.join(os.tmpdir(), 'zig-tigerbeetle-course-test-'));
   server = createApp({ dataDirectory: directory });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -24,9 +24,9 @@ const post = (route, value, headers = {}) => fetch(`${base}/api/${route}`, {
 });
 
 test('complete curriculum exposes tests and hides answer keys', () => {
-  assert.equal(lessons.length, 84);
-  assert.equal(new Set(lessons.map(lesson => lesson.id)).size, 84);
-  assert.equal(lessons.filter(lesson => lesson.kind === 'exercise').length, 51);
+  assert.equal(lessons.length, 98);
+  assert.equal(new Set(lessons.map(lesson => lesson.id)).size, 98);
+  assert.equal(lessons.filter(lesson => lesson.kind === 'exercise').length, 55);
   const publicLessons = publicCourse().chapters.flatMap(ch => ch.lessons);
   for (const lesson of publicLessons) {
     assert.equal(lesson.solution, undefined);

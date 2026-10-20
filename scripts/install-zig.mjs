@@ -33,8 +33,8 @@ try {
   if (process.platform === 'win32') {
     // Keep paths out of PowerShell source so spaces and shell metacharacters remain literal.
     execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-      'Expand-Archive -LiteralPath $env:ZIG_FORGE_ZIP_PATH -DestinationPath $env:ZIG_FORGE_EXTRACT_DIR'], {
-      env: { ...process.env, ZIG_FORGE_ZIP_PATH: archive, ZIG_FORGE_EXTRACT_DIR: staging },
+      'Expand-Archive -LiteralPath $env:ZIG_TIGERBEETLE_COURSE_ZIP_PATH -DestinationPath $env:ZIG_TIGERBEETLE_COURSE_EXTRACT_DIR'], {
+      env: { ...process.env, ZIG_TIGERBEETLE_COURSE_ZIP_PATH: archive, ZIG_TIGERBEETLE_COURSE_EXTRACT_DIR: staging },
       stdio: 'inherit',
     });
   } else {

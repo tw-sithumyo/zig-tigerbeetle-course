@@ -115,7 +115,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   server.headersTimeout = 10_000;
   server.on('error', error => { console.error(error.code === 'EADDRINUSE' ? `Port ${port} is in use. Try PORT=3031 npm start.` : error.message); process.exitCode = 1; });
   server.listen(port, '127.0.0.1', () => {
-    console.log(`\n  ⚡ Zig Forge\n  http://localhost:${port}\n  ${environment().message}\n  Execution: ${environment().mode}\n`);
+    console.log(`\n  ⚡ Zig TigerBeetle Course\n  http://localhost:${port}\n  ${environment().message}\n  Execution: ${environment().mode}\n`);
   });
   const stop = () => server.close(() => process.exit(0));
   process.on('SIGINT', stop);

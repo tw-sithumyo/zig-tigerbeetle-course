@@ -43,3 +43,22 @@ dialog{background:#20251b;border:1px solid #505b41;color:var(--text);border-radi
 .terminal-header{flex-wrap:wrap;row-gap:7px}.terminal pre{overflow-wrap:anywhere}
 @media(max-width:900px){.section-heading{flex-wrap:wrap}.hero-foot{display:block}.workspace{height:740px}}
 @media(max-width:650px){.hero-foot{display:none}.hero h2{font-size:2.25rem;letter-spacing:-1px}.hero-copy{padding:22px}.search{width:100%}.section-heading>.search{flex-basis:100%}.workspace-footer{justify-content:flex-end}.lesson-title-row{gap:8px}.back-button{flex:none}.lesson-meta{flex-shrink:0}.sidebar-label{letter-spacing:1px}.workspace-toolbar{padding-right:9px}.editor-tab{padding:0 11px}.save-state{font-size:.6875rem}.editor-status{font-size:.6875rem}.top-right{gap:8px}.breadcrumbs{min-width:0}.breadcrumbs strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.modal-actions{flex-wrap:wrap}}
+
+/* Optional, locally bundled Vim editor. */
+.editor-tools{flex-wrap:wrap}
+.vim-editor{grid-column:1 / -1;min-width:0;min-height:0;height:100%;overflow:hidden}
+.vim-editor[hidden],.vim-mode[hidden]{display:none}
+.editor-wrap.vim-active>.line-numbers,.editor-wrap.vim-active>.code-area{display:none}
+.vim-mode{font-family:var(--mono);font-weight:600;color:#d6b887;white-space:nowrap}
+#vim-toggle[aria-pressed="true"]{color:#e2c497;background:#343b29;border-radius:4px}
+.vim-key-help{font-size:.8125rem;line-height:1.8}
+.vim-key-help dt{color:#d6b887;margin-top:12px;font-weight:600}
+.vim-key-help dd{margin:3px 0;color:var(--muted)}
+.vim-key-help code{color:var(--text)}
+@media(max-width:650px){.editor-status{flex-wrap:wrap;gap:6px}}
+
+.vim-buffer{height:100%}.vim-buffer[hidden]{display:none}
+
+.editor-wrap{--editor-font-size:.9375rem}
+.code-input,.code-highlight,.line-numbers{font-size:var(--editor-font-size)}
+@media(max-width:650px){.editor-wrap{--editor-font-size:.875rem}}

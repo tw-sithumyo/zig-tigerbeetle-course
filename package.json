@@ -1,10 +1,12 @@
 {
-  "name": "zig-forge",
+  "name": "zig-tigerbeetle-course",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "An offline, local-first Zig learning workshop with real compiler feedback.",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "setup": "node scripts/install-zig.mjs",
     "setup:tigerbeetle": "node scripts/install-tigerbeetle.mjs",
@@ -12,6 +14,19 @@
     "dev": "node --watch server.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:course": "node scripts/check-course.mjs",
-    "test:tigerbeetle": "node scripts/check-tigerbeetle.mjs"
+    "test:tigerbeetle": "node scripts/check-tigerbeetle.mjs",
+    "build:editor": "node scripts/build-editor.mjs",
+    "test:alternatives": "node scripts/check-alternatives.mjs",
+    "test:vim": "node scripts/check-vim.mjs"
+  },
+  "devDependencies": {
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.14",
+    "@lezer/highlight": "1.2.5",
+    "@replit/codemirror-vim": "6.4.0",
+    "codemirror": "6.0.2",
+    "esbuild": "0.28.2"
   }
 }

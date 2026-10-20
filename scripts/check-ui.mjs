@@ -8,7 +8,7 @@ import { createApp } from '../server.mjs';
 import { lessonById } from '../lib/course.mjs';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
-const data = await mkdtemp(path.join(os.tmpdir(), 'zig-forge-ui-'));
+const data = await mkdtemp(path.join(os.tmpdir(), 'zig-tigerbeetle-course-ui-'));
 const server = createApp({ dataDirectory: data });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -21,7 +21,7 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(base);
   await page.getByRole('heading', { name: 'Welcome to your workshop.' }).waitFor();
-  await page.screenshot({ path: '/tmp/zig-forge-course.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/zig-tigerbeetle-course-course.png', fullPage: true });
   assert.equal(await page.locator('.chapter-card').count(), 10);
   await page.getByRole('searchbox', { name: 'Find a lesson' }).fill('memory');
   assert.equal(await page.locator('#course-grid').isVisible(), false);
@@ -30,6 +30,10 @@ try {
   await page.getByRole('link', { name: 'Start your journey' }).click();
   await page.getByRole('heading', { name: 'Your local workshop', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Got it. Let’s build.' }).click();
+  await page.getByRole('heading', { name: 'Why Zig, and when to choose it', exact: true }).waitFor();
+  assert.ok(await page.getByRole('link', { name: 'Language reference (offline)', exact: false }).count());
+  assert.ok(await page.getByRole('link', { name: 'Official Zig overview', exact: false }).count());
+  await page.getByRole('button', { name: 'Got it. Let’s build.' }).click();
   await page.getByRole('heading', { name: 'Hello, Zig', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Check solution', exact: true }).click();
   await page.locator('#terminal-status').filter({ hasText: 'Needs a little work' }).waitFor();
@@ -37,14 +41,14 @@ try {
   await page.getByRole('textbox', { name: 'Zig source code editor' }).fill(hello);
   await page.getByRole('button', { name: 'Check solution', exact: true }).click();
   await page.getByText('Nicely built. All checks passed.').waitFor();
-  assert.equal(await page.locator('#xp-value').textContent(), '125 XP');
-  assert.equal(await page.locator('#progress-count').textContent(), '2/43');
+  assert.equal(await page.locator('#xp-value').textContent(), '150 XP');
+  assert.equal(await page.locator('#progress-count').textContent(), '3/55');
   assert.equal(await page.locator('#lesson-completion-chip').textContent(), '✓ Complete');
-  await page.screenshot({ path: '/tmp/zig-forge-exercise.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/zig-tigerbeetle-course-exercise.png', fullPage: true });
   await page.reload();
   await page.getByRole('heading', { name: 'Hello, Zig', exact: true }).waitFor();
   assert.equal(await page.getByRole('textbox', { name: 'Zig source code editor' }).inputValue(), hello);
-  await page.getByRole('link', { name: 'Next: Values with intention' }).click();
+  await page.getByRole('link', { name: 'Next: Make room before adding' }).click();
   await page.getByRole('tab', { name: 'Tests' }).click();
   assert.equal(await page.getByRole('textbox', { name: 'Read-only course tests' }).getAttribute('readonly'), '');
   await page.getByRole('tab', { name: 'main.zig' }).click();
@@ -65,7 +69,7 @@ try {
   await page.locator('input[name="q2"][value="2"]').check();
   await page.getByRole('button', { name: 'Check again' }).click();
   await page.getByText('3/3 correct · Checkpoint complete!').waitFor();
-  assert.equal(await page.locator('#xp-value').textContent(), '200 XP');
+  assert.equal(await page.locator('#xp-value').textContent(), '225 XP');
   await page.getByRole('link', { name: 'Playground', exact: true }).click();
   await page.getByRole('button', { name: 'Run code', exact: true }).click();
   await page.locator('#terminal-output').filter({ hasText: 'Welcome to your Zig workshop!' }).waitFor();
@@ -91,10 +95,13 @@ try {
   await page.getByRole('link', { name: 'TigerBeetle project', exact: true }).click();
   await page.getByRole('heading', { name: 'Your TigerBeetle workshop.' }).waitFor();
   assert.equal(await page.locator('.chapter-card').count(), 10);
-  assert.equal(await page.locator('#progress-count').textContent(), '0/41');
-  await page.screenshot({ path: '/tmp/zig-forge-tigerbeetle.png', fullPage: true });
+  assert.equal(await page.locator('#progress-count').textContent(), '0/43');
+  await page.screenshot({ path: '/tmp/zig-tigerbeetle-course-tigerbeetle.png', fullPage: true });
   await page.getByRole('link', { name: 'Start your journey' }).click();
   await page.getByRole('heading', { name: 'What your team is building', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Got it. Let’s build.' }).click();
+  await page.getByRole('heading', { name: 'Why TigerBeetle, and when it fits', exact: true }).waitFor();
+  assert.ok(await page.getByRole('link', { name: 'Workload: OLTP and hot accounts', exact: false }).count());
   await page.getByRole('button', { name: 'Got it. Let’s build.' }).click();
   await page.getByRole('heading', { name: 'Lab: create the accounts', exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Format', exact: true }).count(), 0);
@@ -106,8 +113,8 @@ try {
   await page.getByRole('textbox', { name: 'TigerBeetle REPL editor' }).fill(lessonById.get('tb-create-accounts').solution);
   await page.getByRole('button', { name: 'Check solution', exact: true }).click();
   await page.getByText('Nicely built. All checks passed.').waitFor();
-  assert.equal(await page.locator('#progress-count').textContent(), '2/41');
-  await page.screenshot({ path: '/tmp/zig-forge-tigerbeetle-lab.png', fullPage: true });
+  assert.equal(await page.locator('#progress-count').textContent(), '3/43');
+  await page.screenshot({ path: '/tmp/zig-tigerbeetle-course-tigerbeetle-lab.png', fullPage: true });
   await page.reload();
   await page.getByRole('heading', { name: 'Lab: create the accounts', exact: true }).waitFor();
   assert.equal(await page.getByRole('textbox', { name: 'TigerBeetle REPL editor' }).inputValue(), lessonById.get('tb-create-accounts').solution);
@@ -132,7 +139,7 @@ try {
   await mobile.goto(`${base}/#course/tigerbeetle`);
   await mobile.getByRole('heading', { name: 'Your TigerBeetle workshop.' }).waitFor();
   assert.ok(await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
-  await mobile.screenshot({ path: '/tmp/zig-forge-mobile.png', fullPage: true });
+  await mobile.screenshot({ path: '/tmp/zig-tigerbeetle-course-mobile.png', fullPage: true });
   await mobile.getByRole('button', { name: 'Toggle navigation' }).click();
   await mobile.getByRole('link', { name: 'Playground', exact: true }).click();
   await mobile.getByRole('heading', { name: 'A place to try things.' }).waitFor();
@@ -147,7 +154,7 @@ try {
   assert.deepEqual(external, []);
   assert.deepEqual(errors, []);
   console.log('Two-track UI passed: TigerStyle, source excerpts, live database labs, upstream test, TigerBeetle quiz, and  desktop/mobile layouts, search, reading, real compiler feedback, persistence, hints, solution dialog, quiz retry, playground run/test/build/format, environment dialog, and zero external requests.');
-  console.log('Screenshots: /tmp/zig-forge-course.png, /tmp/zig-forge-exercise.png, /tmp/zig-forge-mobile.png');
+  console.log('Screenshots: /tmp/zig-tigerbeetle-course-course.png, /tmp/zig-tigerbeetle-course-exercise.png, /tmp/zig-tigerbeetle-course-mobile.png');
 } finally {
   if (browser) await browser.close();
   await new Promise(resolve => server.close(resolve));

@@ -43,6 +43,8 @@ const editorName = () => !nonZig() ? 'main.zig' : currentLesson.engine === 'tige
 const editorLabel = () => !nonZig() ? 'Zig source code editor' : currentLesson.engine === 'tigerbeetle' ? 'TigerBeetle REPL editor' : 'Source evidence editor';
 const labLabel = lesson => lesson.engine === 'tigerbeetle' ? 'Real database lab' : lesson.engine === 'source' ? 'Source investigation' : lesson.engine === 'upstream' ? 'Upstream build and test' : 'Zig coding exercise';
 let saveTimer, toastTimer, saveQueue = Promise.resolve();
+let vimEditor = null, vimLoad = null, vimGeneration = 0, vimEnabled = false;
+try { vimEnabled = (localStorage.getItem('zig-tigerbeetle-course-vim') ?? localStorage.getItem('zig-forge-vim')) === 'true'; } catch {}
 const chapterIcons = ['bolt', 'layers', 'branch', 'box', 'link', 'shield', 'chip', 'terminal'];
 
 async function api(route, body) {
@@ -105,19 +107,23 @@ function lessonLink(lesson) { return `#lesson/${lesson.id}`; }
 function nextLesson() { const items = activeLessons(); return items[items.findIndex(lesson => lesson.id === currentId) + 1]; }
 function xpFor(lesson) { return lesson.kind === 'exercise' ? 100 : lesson.kind === 'quiz' ? 75 : 25; }
 function referenceLink(lesson) {
-  if (lesson?.references?.length) return `<span class="reference-links">${lesson.references.map(ref => `<a class="reference-link" href="${escape(ref.url)}" target="_blank" rel="noopener">${escape(ref.title)} ${icon('external')}</a>`).join('')}</span>`;
-  return `<a class="reference-link" href="/reference#${escape(lesson?.reference || 'Introduction')}" target="_blank" rel="noopener">Language reference ${icon('external')}</a>`;
+  const references = [...(lesson?.references || [])];
+  if (lesson?.reference || !references.length) references.unshift({
+    title: 'Language reference (offline)', url: `/reference#${lesson?.reference || 'Introduction'}`,
+  });
+  return `<span class="reference-links">${references.map(ref => `<a class="reference-link" href="${escape(ref.url)}" target="_blank" rel="noopener">${escape(ref.title)} ${icon('external')}</a>`).join('')}</span>`;
 }
 function sourceButtons(lesson) {
   return lesson?.sourceKeys?.length ? `<div class="source-section"><span class="subtle">READ THE PINNED SOURCE · LOCAL EXCERPTS</span><div class="source-buttons">${lesson.sourceKeys.map(key => `<button class="button quiet small" data-action="source" data-source="${escape(key)}">${icon('code')}${escape(key.replaceAll('-', ' '))}</button>`).join('')}</div></div>` : '';
 }
 
 function shell(content, breadcrumb = 'Course overview') {
+  disposeVimEditor();
   const currentChapter = course.chapters.find(ch => ch.lessons.some(lesson => lesson.id === currentId));
   const ready = currentLesson?.engine === 'source' ? env.tigerbeetle.sourceReady : currentLesson?.engine === 'upstream' ? env.tigerbeetle.sourceBuildReady : currentLesson?.engine === 'tigerbeetle' || currentTrack === 'tigerbeetle' && !currentLesson ? env.tigerbeetle.ready : env.ready;
   app.innerHTML = `<div class="shell">
     <aside class="sidebar" aria-label="Course navigation">
-      <a class="brand" href="#course"><span class="brand-mark">ϟ</span>Zig Forge <small>LOCAL</small></a>
+      <a class="brand" href="#course"><span class="brand-mark">ϟ</span>Zig TigerBeetle Course <small>LOCAL</small></a>
       <nav class="track-switcher" aria-label="Learning tracks">${course.tracks.map(track => `<a class="track-link ${track.id === currentTrack ? 'active' : ''}" href="#course/${track.id}" ${track.id === currentTrack ? 'aria-current="true"' : ''}>${icon(track.id === 'zig' ? 'code' : 'layers')}${escape(track.title)}</a>`).join('')}</nav>
       <nav class="main-nav">
         <a href="#course/${currentTrack}" class="nav-link ${currentView === 'course' ? 'active' : ''}">${icon('map')}Learning path<span class="nav-small" id="progress-count">${doneInTrack()}/${activeLessons().length}</span></a>
@@ -186,9 +192,9 @@ function readingView(lesson, chapter) {
 function editorMarkup(playground = false) {
   const saved = outputById[currentId];
   return `<section class="workspace" aria-label="Coding and lab workspace"><div class="workspace-toolbar"><div class="editor-tabs" role="tablist" aria-label="Editor files"><button class="editor-tab ${editorTab === 'code' ? 'active' : ''}" role="tab" aria-selected="${editorTab === 'code'}" data-tab="code">${icon('file')}${editorName()}</button>${!playground && currentLesson.tests ? `<button class="editor-tab ${editorTab === 'tests' ? 'active' : ''}" role="tab" aria-selected="${editorTab === 'tests'}" data-tab="tests">${icon('shield')}Tests</button>` : ''}</div><span id="save-state" class="save-state">Saved locally</span></div>
-    <div class="editor-tools">${!nonZig() ? `<button class="tool-button" data-action="format" title="Format with zig fmt">${icon('code')}Format</button><button class="tool-button" data-action="build" title="Compile without running">${icon('box')}Build</button>` : `<span class="lab-mode">${escape(labLabel(currentLesson))}</span>`}<button class="tool-button" data-action="download" title="Download ${editorName()}">${icon('download')}Save file</button><button class="tool-button tool-right" data-action="reset" title="Restore starter code">${icon('refresh')}</button></div>
-    <div class="editor-wrap"><div class="line-numbers" aria-hidden="true" id="line-numbers"></div><div class="code-area"><pre class="code-highlight" id="code-highlight" aria-hidden="true"></pre><textarea id="code-input" class="code-input" aria-label="${editorLabel()}" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea></div></div>
-    <div class="editor-status"><span>${playground ? 'YOUR OWN EXPERIMENTS' : 'UTF-8 · 4 SPACES'}</span><span id="cursor-position">Ln 1, Col 1</span><span>${nonZig() ? currentLesson.engine === 'tigerbeetle' ? `TigerBeetle ${env.tigerbeetle.expectedVersion}` : currentLesson.engine === 'upstream' ? 'Upstream Zig 0.14.1' : 'Pinned source' : `Zig ${course.version}`} · local</span></div>
+    <div class="editor-tools">${!nonZig() ? `<button class="tool-button" data-action="format" title="Format with zig fmt">${icon('code')}Format</button><button class="tool-button" data-action="build" title="Compile without running">${icon('box')}Build</button>` : `<span class="lab-mode">${escape(labLabel(currentLesson))}</span>`}<button class="tool-button" data-action="download" title="Download ${editorName()}">${icon('download')}Save file</button><button class="tool-button" id="vim-toggle" data-action="toggle-vim" aria-pressed="${vimEnabled}">Vim: ${vimEnabled ? 'on' : 'off'}</button><button class="tool-button" data-action="vim-help" aria-label="Vim keybindings help">Keys</button><button class="tool-button tool-right" data-action="reset" title="Restore starter code">${icon('refresh')}</button></div>
+    <div class="editor-wrap"><div class="line-numbers" aria-hidden="true" id="line-numbers"></div><div class="code-area"><pre class="code-highlight" id="code-highlight" aria-hidden="true"></pre><textarea id="code-input" class="code-input" aria-label="${editorLabel()}" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea></div><div class="vim-editor" id="vim-editor" hidden></div></div>
+    <div class="editor-status"><span>${playground ? 'YOUR OWN EXPERIMENTS' : 'UTF-8 · 4 SPACES'}</span><span id="vim-mode" class="vim-mode" role="status" aria-live="polite" hidden>NORMAL</span><span id="cursor-position">Ln 1, Col 1</span><span>${nonZig() ? currentLesson.engine === 'tigerbeetle' ? `TigerBeetle ${env.tigerbeetle.expectedVersion}` : currentLesson.engine === 'upstream' ? 'Upstream Zig 0.14.1' : 'Pinned source' : `Zig ${course.version}`} · local</span></div>
     <div class="terminal"><div class="terminal-header">${icon('terminal')}OUTPUT<span id="terminal-status" class="terminal-status ${saved ? saved.passed ? 'pass' : 'fail' : ''}">${saved ? `${saved.passed ? 'Passed' : 'Needs a little work'} · ${saved.durationMs} ms` : 'Ready when you are'}</span><button class="terminal-clear" data-action="clear-output">Clear</button></div><pre id="terminal-output" role="log" aria-live="polite" class="${saved && !saved.passed ? 'error' : ''}">${escape(saved ? `$ ${saved.command}\n\n${saved.output}` : playground ? 'Try an idea. Run it. See what happens.\n\nYour code compiles and runs on this computer.' : 'Your compiler is waiting.\n\nEdit the code, then check your solution.\nCompiler messages and test results will appear here.')}</pre></div>
     <div class="workspace-footer"><span class="keyboard">Ctrl / ⌘ + Enter to ${playground ? 'run' : 'check'}</span><div><button class="button quiet small" data-action="${playground ? 'test' : 'run'}">${icon(playground ? 'shield' : 'play')}${playground ? 'Run tests' : nonZig() ? currentLesson.engine === 'tigerbeetle' ? 'Run commands' : 'Inspect' : currentLesson.tests ? 'My tests' : 'Run'}</button> <button class="button primary" id="check-button" data-action="${playground ? 'run' : 'check'}">${icon(playground ? 'play' : 'check')}${playground ? 'Run code' : 'Check solution'}</button></div></div></section>`;
 }
@@ -255,6 +261,58 @@ function updateEditor() {
   for (const tab of document.querySelectorAll('[data-tab]')) { tab.classList.toggle('active', tab.dataset.tab === editorTab); tab.setAttribute('aria-selected', String(tab.dataset.tab === editorTab)); }
   syncScroll();
   updateCursor();
+  syncVimEditor();
+}
+
+function disposeVimEditor() {
+  vimGeneration++;
+  vimEditor?.destroy();
+  vimEditor = null;
+}
+
+async function syncVimEditor(focus = false) {
+  const input = $('#code-input'), host = $('#vim-editor');
+  if (!input || !host) return;
+  const generation = ++vimGeneration;
+  const button = $('#vim-toggle');
+  button.textContent = `Vim: ${vimEnabled ? 'on' : 'off'}`;
+  button.setAttribute('aria-pressed', String(vimEnabled));
+  if (!vimEnabled) {
+    const selection = vimEditor?.selection();
+    disposeVimEditor();
+    host.hidden = true;
+    $('.editor-wrap').classList.remove('vim-active');
+    $('#vim-mode').hidden = true;
+    if (selection) input.setSelectionRange(selection.from, selection.to);
+    if (focus) input.focus();
+    updateCursor();
+    return;
+  }
+  try {
+    if (!vimEditor) {
+      vimLoad ||= import('/vendor/vim-editor.js');
+      const { createVimEditor } = await vimLoad;
+      if (generation !== vimGeneration || !host.isConnected || !vimEnabled) return;
+      vimEditor = createVimEditor({
+        parent: host,
+        onChange(code) { input.value = code; changedCode(); },
+        onCursor(line, column) { $('#cursor-position').textContent = `Ln ${line}, Col ${column}`; },
+        onMode(mode) { $('#vim-mode').textContent = mode; },
+        onSave() { clearTimeout(saveTimer); return persistDraft(currentId, sourceCode()).then(() => toast('Code saved locally.')); },
+        onRun() { execute(currentId === 'playground' ? 'run' : 'check'); },
+      });
+    }
+    host.hidden = false;
+    $('.editor-wrap').classList.add('vim-active');
+    $('#vim-mode').hidden = false;
+    vimEditor.show({ doc: shownCode(), readOnly: editorTab === 'tests', label: input.getAttribute('aria-label'), key: editorTab });
+    if (focus) vimEditor.focus();
+  } catch (error) {
+    vimLoad = null;
+    vimEnabled = false;
+    syncVimEditor();
+    toast(`Vim editor could not load: ${error.message}`);
+  }
 }
 
 function syncScroll() {
@@ -380,13 +438,13 @@ function showModal(title, content, actions = '') {
 
 async function environmentModal() {
   try { env = await api('environment'); } catch (error) { toast(error.message); }
-  showModal('Your local environment', `<div class="env-row"><span>Compiler</span><span>${env.ready ? '✓' : '○'} Zig ${escape(env.version || 'not installed')}</span></div><div class="env-row"><span>Course version</span><span>${escape(env.expectedVersion)}</span></div><div class="env-row"><span>Execution</span><span>${escape(env.mode)}</span></div><div class="env-row"><span>Platform</span><span>${escape(env.platform)}</span></div><div class="env-row"><span>Connection</span><span>Localhost · no account required</span></div><p class="modal-note">${escape(env.message)} ${env.sandboxed ? 'Code runs in an isolated filesystem with networking disabled. Compiler output is limited to 64 KiB and execution to 35 seconds.' : 'Code runs with your user’s permissions. Use your own code and trusted examples. On Linux, install Bubblewrap to enable automatic filesystem and network isolation.'}</p><p class="modal-note">To install the pinned compiler, run this in the zig-forge folder, then restart the app:</p><pre class="modal-code">npm run setup\nnpm start</pre><p class="modal-note">Code, quiz attempts, and progress live in .data/progress.json. After setup, lessons and compilation work offline.</p>`, '<button class="button quiet" id="export-progress">Export progress</button><button class="button primary" id="env-done">Back to learning</button>');
+  showModal('Your local environment', `<div class="env-row"><span>Compiler</span><span>${env.ready ? '✓' : '○'} Zig ${escape(env.version || 'not installed')}</span></div><div class="env-row"><span>Course version</span><span>${escape(env.expectedVersion)}</span></div><div class="env-row"><span>Execution</span><span>${escape(env.mode)}</span></div><div class="env-row"><span>Platform</span><span>${escape(env.platform)}</span></div><div class="env-row"><span>Connection</span><span>Localhost · no account required</span></div><p class="modal-note">${escape(env.message)} ${env.sandboxed ? 'Code runs in an isolated filesystem with networking disabled. Compiler output is limited to 64 KiB and execution to 35 seconds.' : 'Code runs with your user’s permissions. Use your own code and trusted examples. On Linux, install Bubblewrap to enable automatic filesystem and network isolation.'}</p><p class="modal-note">To install the pinned compiler, run this in the zig-tigerbeetle-course folder, then restart the app:</p><pre class="modal-code">npm run setup\nnpm start</pre><p class="modal-note">Code, quiz attempts, and progress live in .data/progress.json. After setup, lessons and compilation work offline.</p>`, '<button class="button quiet" id="export-progress">Export progress</button><button class="button primary" id="env-done">Back to learning</button>');
   const tb = env.tigerbeetle;
   const extra = document.createElement('section');
   extra.innerHTML = `<h3 class="env-section-heading">TigerBeetle project environment</h3><div class="env-row"><span>Database</span><span>${tb.ready ? '✓' : '○'} ${escape(tb.version || 'Not installed')}</span></div><div class="env-row"><span>Pinned source</span><span>${tb.sourceReady ? '✓ ' + escape(tb.sourceCommit.slice(0, 12)) : 'Not installed'}</span></div><div class="env-row"><span>Upstream compiler</span><span>Zig ${escape(tb.sourceZig || 'not installed')} (requires 0.14.1)</span></div><p class="modal-note">Live labs format a disposable database and use a private loopback network on Linux when Bubblewrap is enabled. The real upstream build runs locally in the pinned checkout. Setup downloads the binary, source, and separate compiler; the Zig foundations environment stays on 0.17.0.</p><pre class="modal-code">npm run setup:tigerbeetle</pre>`;
   $('#modal .modal-actions').before(extra);
   $('#env-done').onclick = () => $('#modal').close();
-  $('#export-progress').onclick = () => download('zig-forge-progress.json', JSON.stringify(progress, null, 2), 'application/json');
+  $('#export-progress').onclick = () => download('zig-tigerbeetle-course-progress.json', JSON.stringify(progress, null, 2), 'application/json');
 }
 
 function bindGlobalActions() {
@@ -400,9 +458,19 @@ function bindGlobalActions() {
       } catch (error) { toast(error.message); }
       return;
     }
+    if (action === 'toggle-vim') {
+      vimEnabled = !vimEnabled;
+      try { localStorage.setItem('zig-tigerbeetle-course-vim', String(vimEnabled)); } catch {}
+      await syncVimEditor(true);
+      return;
+    }
+    if (action === 'vim-help') {
+      showModal('Vim keybindings', '<p class="modal-note">Turn on Vim in the editor toolbar. The mode indicator shows NORMAL, INSERT, or VISUAL. Your preference stays in this browser.</p><dl class="vim-key-help"><dt>Insert</dt><dd><code>i</code> before cursor · <code>a</code> after · <code>I</code>/<code>A</code> start/end · <code>o</code>/<code>O</code> new line · <code>Esc</code> back to Normal</dd><dt>Move</dt><dd><code>h j k l</code> · <code>w b e</code> words · <code>0 ^ $</code> line · <code>gg G</code> document · counts such as <code>3j</code></dd><dt>Select</dt><dd><code>v</code> characters · <code>V</code> lines · <code>Ctrl+v</code> block · motions extend selection · <code>Esc</code> exits</dd><dt>Edit</dt><dd><code>x</code>, <code>dd</code>, <code>dw</code>, <code>ciw</code> · <code>y</code>/<code>yy</code> yank · <code>p</code>/<code>P</code> paste · <code>u</code> undo · <code>Ctrl+r</code> redo · <code>.</code> repeat</dd><dt>Search and save</dt><dd><code>/pattern</code>, <code>n</code>/<code>N</code> · <code>:w</code> saves the local draft · <code>Ctrl/⌘+Enter</code> checks or runs</dd></dl><p class="modal-note">Tests remain read-only. These are Vim-style browser keybindings; your local Neovim plugins and configuration are not loaded. Use Tab to move focus in Normal mode, or switch Vim off for the regular editor.</p>');
+      return;
+    }
     if (action === 'menu') return $('.shell').classList.toggle('nav-open');
     if (action === 'environment') return environmentModal();
-    if (action === 'export') return download('zig-forge-progress.json', JSON.stringify(progress, null, 2), 'application/json');
+    if (action === 'export') return download('zig-tigerbeetle-course-progress.json', JSON.stringify(progress, null, 2), 'application/json');
     if (action === 'download') return download(nonZig() ? editorName() : `${currentId === 'playground' ? 'main' : currentId}.zig`, sourceCode());
     if (action === 'clear-output') {
       delete outputById[currentId];
