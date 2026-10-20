@@ -22,8 +22,8 @@ const post = (route, value) => fetch(`${base}/api/${route}`, { method: 'POST', h
 test('both tracks retain distinct identities and the Zig track includes TigerStyle practice', () => {
   assert.equal(chapters.filter(ch => ch.trackId === 'zig').length, 10);
   assert.equal(chapters.filter(ch => ch.trackId === 'tigerbeetle').length, 10);
-  assert.equal(lessons.filter(lesson => lesson.trackId === 'zig').length, 55);
-  assert.equal(lessons.filter(lesson => lesson.trackId === 'tigerbeetle').length, 43);
+  assert.equal(lessons.filter(lesson => lesson.trackId === 'zig').length, 56);
+  assert.equal(lessons.filter(lesson => lesson.trackId === 'tigerbeetle').length, 46);
   for (const id of ['zig-tigerstyle', 'zig-style-contracts', 'zig-style-bounds', 'zig-style-units', 'zig-packed-flags', 'zig-bounded-queue', 'zig-completion-callback']) {
     assert.equal(lessonById.get(id).trackId, 'zig');
     assert.ok(lessonById.get(id).references.some(ref => ref.url.includes(TB_COMMIT)));

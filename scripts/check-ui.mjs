@@ -42,7 +42,7 @@ try {
   await page.getByRole('button', { name: 'Check solution', exact: true }).click();
   await page.getByText('Nicely built. All checks passed.').waitFor();
   assert.equal(await page.locator('#xp-value').textContent(), '150 XP');
-  assert.equal(await page.locator('#progress-count').textContent(), '3/55');
+  assert.equal(await page.locator('#progress-count').textContent(), '3/56');
   assert.equal(await page.locator('#lesson-completion-chip').textContent(), '✓ Complete');
   await page.screenshot({ path: '/tmp/zig-tigerbeetle-course-exercise.png', fullPage: true });
   await page.reload();
@@ -95,7 +95,7 @@ try {
   await page.getByRole('link', { name: 'TigerBeetle project', exact: true }).click();
   await page.getByRole('heading', { name: 'Your TigerBeetle workshop.' }).waitFor();
   assert.equal(await page.locator('.chapter-card').count(), 10);
-  assert.equal(await page.locator('#progress-count').textContent(), '0/43');
+  assert.equal(await page.locator('#progress-count').textContent(), '0/46');
   await page.screenshot({ path: '/tmp/zig-tigerbeetle-course-tigerbeetle.png', fullPage: true });
   await page.getByRole('link', { name: 'Start your journey' }).click();
   await page.getByRole('heading', { name: 'What your team is building', exact: true }).waitFor();
@@ -113,7 +113,7 @@ try {
   await page.getByRole('textbox', { name: 'TigerBeetle REPL editor' }).fill(lessonById.get('tb-create-accounts').solution);
   await page.getByRole('button', { name: 'Check solution', exact: true }).click();
   await page.getByText('Nicely built. All checks passed.').waitFor();
-  assert.equal(await page.locator('#progress-count').textContent(), '3/43');
+  assert.equal(await page.locator('#progress-count').textContent(), '3/46');
   await page.screenshot({ path: '/tmp/zig-tigerbeetle-course-tigerbeetle-lab.png', fullPage: true });
   await page.reload();
   await page.getByRole('heading', { name: 'Lab: create the accounts', exact: true }).waitFor();

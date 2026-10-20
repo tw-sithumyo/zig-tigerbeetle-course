@@ -17,7 +17,8 @@
     "test:tigerbeetle": "node scripts/check-tigerbeetle.mjs",
     "build:editor": "node scripts/build-editor.mjs",
     "test:alternatives": "node scripts/check-alternatives.mjs",
-    "test:vim": "node scripts/check-vim.mjs"
+    "test:vim": "node scripts/check-vim.mjs",
+    "test:display": "node scripts/check-display.mjs"
   },
   "devDependencies": {
     "@codemirror/commands": "6.11.1",

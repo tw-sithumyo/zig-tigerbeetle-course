@@ -24,9 +24,9 @@ const post = (route, value, headers = {}) => fetch(`${base}/api/${route}`, {
 });
 
 test('complete curriculum exposes tests and hides answer keys', () => {
-  assert.equal(lessons.length, 98);
-  assert.equal(new Set(lessons.map(lesson => lesson.id)).size, 98);
-  assert.equal(lessons.filter(lesson => lesson.kind === 'exercise').length, 55);
+  assert.equal(lessons.length, 102);
+  assert.equal(new Set(lessons.map(lesson => lesson.id)).size, 102);
+  assert.equal(lessons.filter(lesson => lesson.kind === 'exercise').length, 59);
   const publicLessons = publicCourse().chapters.flatMap(ch => ch.lessons);
   for (const lesson of publicLessons) {
     assert.equal(lesson.solution, undefined);

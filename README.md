@@ -2,12 +2,12 @@
 
 A Boot.dev-inspired Zig and TigerBeetle learning app that runs on your own computer. Lessons, code editing, compilation, database labs, tests, quizzes, and progress all stay local. No account, API key, hosted runner, or subscription.
 
-Two learning paths contain **98 units, 23 theory lessons, 55 exercises, and 73 quiz questions**. Every exercise has an explanation, assignment, failing starter, checks, progressive hints, and a reference solution. Every reading and exercise links to primary references. This is a structured path toward project fluency: completion is evidence of practice, not a certification of mastery or production readiness.
+Two learning paths contain **102 units, 23 theory lessons, 59 exercises, and 73 quiz questions**. Every exercise has an explanation, assignment, failing starter, checks, progressive hints, and a reference solution. Every reading and exercise links to primary references. This is a structured path toward project fluency: completion is evidence of practice, not a certification of mastery or production readiness.
 
 | Path | Chapters | Theory | Exercises | Quizzes / questions |
 | --- | --- | --- | --- | --- |
-| Zig foundations | 10 | 11 lessons | 34 local Zig exercises | 10 / 32 |
-| TigerBeetle project | 10 | 12 lessons | 11 live DB labs, 7 Zig models, 2 source investigations, 1 upstream build/test | 10 / 41 |
+| Zig foundations | 10 | 11 lessons | 35 local Zig exercises | 10 / 32 |
+| TigerBeetle project | 10 | 12 lessons | 11 live DB labs, 10 Zig models, 2 source investigations, 1 upstream build/test | 10 / 41 |
 
 ## Start
 
@@ -58,6 +58,7 @@ TIGERBEETLE_BIN=/path/to/tigerbeetle-0.17.9 npm start
 - Hints reveal one at a time. Viewing a reference solution is recorded, and loading one still requires running the checks. Exercise checks support learning; they are not an anti-cheating system.
 - Quiz results include explanations. All questions must be correct to complete a checkpoint. Retry freely. XP is awarded once: 100 per exercise, 75 per quiz, 25 per theory lesson.
 - Use **Playground** for independent programs and test blocks. **Save file** downloads the source. Builds use a temporary directory, which is removed after each command. To keep a binary, download your source and run `zig build-exe main.zig` in your own directory.
+- Open **Display** (the **Aa** button) to adjust **code**, **course text**, and **navigation menu** sizes independently. Sliders and +/− buttons preview changes immediately; **Reset sizes** restores the defaults. Preferences stay in this browser across reloads, separately from course progress. Code size applies to the regular and Vim editors, tests, examples, and terminal output.
 - Select **Vim: off** in the editor toolbar to enable Vim keybindings. **i/a/o** enter Insert mode, **Esc** returns to Normal, **v/V/Ctrl+v** select characters/lines/blocks. Motions, operators, yank/paste, undo/redo, search, and **:w** work in the browser; **Keys** opens the reference. The preference persists in this browser. Tests remain read-only, and Ctrl/Cmd+Enter still checks/runs code. The local bundle provides Vim-style editing without loading a Neovim process or its plugins.
 - Drafts save automatically. **Export progress** downloads a JSON backup. Copy `.data/progress.json` back into the data directory with the server stopped to restore a backup; there is no in-app import.
 
@@ -76,20 +77,20 @@ Each Zig chapter pairs theory with practice. The opening **Why Zig, and when to 
 | Think at compile time | Specialization tradeoffs, comptime array lengths, generic functions, test properties |
 | Build: a tiny ledger | Strict parsing, multi-line input, reports, modules/builds, IO and C/target boundaries |
 | Write in TigerStyle | Naming, units, options structs, external validation versus internal assertions, bounded work, overflow |
-| Read TigerBeetle's Zig | Packed flags, type factories, `@This`, bounded queues, function pointers, `@fieldParentPtr`, ABI/comptime/platform patterns |
+| Read TigerBeetle's Zig | Packed flags, type factories, `@This`, bounded queues, function pointers, `@fieldParentPtr`, ABI/comptime/platform patterns, explicit byte-order decoding |
 
-The last two chapters are **inside the Zig learning path**, with six additional coding exercises and eight quiz questions. They use source excerpts from the pinned TigerBeetle project and source-inspired examples. Tests verify behavior; `zig fmt` and passing tests do not replace a TigerStyle design review.
+The last two chapters are **inside the Zig learning path**, with seven additional coding exercises and eight quiz questions. They use source excerpts from the pinned TigerBeetle project and source-inspired examples. Tests verify behavior; `zig fmt` and passing tests do not replace a TigerStyle design review.
 
 ## TigerBeetle project path
 
 | Chapter | Theory and practice |
 | --- | --- |
 | Meet TigerBeetle | Why/when to use it, selection tradeoffs, trust boundary, real account creation and transfers |
-| Model accounts and assets | Worked double-entry example, integer scale, u128 balance model, separate ledgers |
-| Submit safely, batch deliberately | Durable end-to-end IDs, ambiguity, exact retries, dense 0.17 results, linked rollback, batching/latency/backpressure |
+| Model accounts and assets | Worked double-entry example, integer scale, exact decimal parsing, u128 balance model, separate ledgers |
+| Submit safely, batch deliberately | Durable end-to-end IDs, ambiguity, exact retries, intent comparison, dense 0.17 results, linked rollback, batching/latency/backpressure |
 | Enforce the invariant | Atomic balance policies, overdraft rejection, pending availability |
 | Reserve, settle, or release | Pending, partial posting, voiding, expiry semantics and immutable resolution records |
-| Read and reconcile | Real transfer/balance history queries, pagination, overflow-safe reconciliation model |
+| Read and reconcile | Real transfer/balance history queries, checked pagination cursors, overflow-safe reconciliation model |
 | Build a reliable wallet flow | Holds, fees, linked retries, corrections, SDK lifecycle, durable intent/outbox design, crash windows |
 | Find your way around the source | Actual module/handler discovery, ABI layout, allocation and callback ownership |
 | Order, replicate, recover | Strict serializability, safety/liveness, VSR, different quorum thresholds, WAL/LSM/checkpoints |
@@ -99,7 +100,9 @@ Live exercises edit **commands.tb**, a semicolon-delimited TigerBeetle REPL scri
 
 Source investigations edit **evidence.json** and check answers against actual local source declarations. Source buttons display allowlisted local excerpts with line numbers and pinned upstream links. The **upstream build/test** exercise invokes the checkout's real `./zig/zig build test:unit --summary all -- sum_overflows`, requires successful test execution, and uses its own Zig 0.14.1. It does not accept arbitrary shell commands. Cold builds can take several minutes. The course uses a bounded focused test; it does not claim that this is the full upstream test suite.
 
-The seven TigerBeetle Zig model exercises are explicitly labeled teaching models. They do not implement the production accounting state machine or VSR. The real database labs are separate from these models. The final review asks for an SDK implementation of the wallet flow, a source trace, a meaningful new boundary test in a separate working clone, and an operational recovery discussion with your team.
+The ten TigerBeetle Zig model exercises are explicitly labeled teaching models. They do not implement the production accounting state machine or VSR. The real database labs are separate from these models. The final review asks for an SDK implementation of the wallet flow, a source trace, a meaningful new boundary test in a separate working clone, and an operational recovery discussion with your team.
+
+The boundary exercises add exact decimal-to-integer parsing, comparison of durable retry intents, and timestamp cursor arithmetic to the TigerBeetle path. The Zig path adds explicit byte-order decoding with length and version validation. Each has boundary checks, a failing starter, progressive hints, and a reference solution. These application-side models prepare you for SDK integration; they do not replace the live database labs.
 
 ## Coverage and references
 
@@ -108,10 +111,10 @@ The curriculum review found substantial existing database practice, but thin Zig
 | Learning goal | Where to study it | Evidence and limits |
 | --- | --- | --- |
 | Explain why and when to use Zig | Why Zig; chapter theory; TigerStyle | Workload/maintenance decision prompts; performance still requires measurement |
-| Use Zig and explain its semantics | Types, flow, contracts, memory, comptime, project chapters | 34 compiler-checked exercises; standalone CLI, C integration, and cross-target execution are follow-up work |
+| Use Zig and explain its semantics | Types, flow, contracts, memory, comptime, project chapters | 35 compiler-checked exercises; standalone CLI, C integration, and cross-target execution are follow-up work |
 | Explain why and when to use TigerBeetle | Why TigerBeetle; batching/resources; architecture | Decision record and benchmark design; local labs do not establish production capacity |
 | Use the database correctly | Modeling, retries, invariants, pending transfers, queries, wallet | 11 live labs; SDK/outbox and external settlement recovery are explained and assigned for independent implementation |
-| Explain the implementation and its guarantees | Source, VSR, testing/operations; final Zig chapters | Source evidence, seven teaching models, one upstream test, and a healthy-disk restart; no full distributed-failure or production-recovery certification |
+| Explain the implementation and its guarantees | Source, VSR, testing/operations; final Zig chapters | Source evidence, ten teaching models, one upstream test, and a healthy-disk restart; no full distributed-failure or production-recovery certification |
 
 References distinguish **versioned behavior** from **general guidance**. Zig language links target [the course's 0.17.0 reference](https://ziglang.org/documentation/0.17.0/); the same sections remain available through each relevant lesson's **Language reference (offline)** link. The [official overview](https://ziglang.org/learn/overview/) and [build-system guide](https://ziglang.org/learn/build-system/) are living documents, so check examples against the installed compiler and its generated project.
 
@@ -143,7 +146,7 @@ npm run test:alternatives
 npm run test:tigerbeetle
 ```
 
-The tests cover real compilation/database operations, durable drafts, one-time XP, quiz grading, separate resume positions, local-request guards, source-excerpt allowlists, formatting, building, compiler failures, and output limits. Environment-dependent tests skip when the relevant tool is not installed. `test:course` checks all **41 Zig reference solutions and starters** across both paths. `test:tigerbeetle` checks all **14 live/source/upstream reference solutions and starters**, including linked rollback/retry, allocation-independent account policies, real restart persistence, and the actual upstream test.
+The tests cover real compilation/database operations, durable drafts, one-time XP, quiz grading, separate resume positions, local-request guards, source-excerpt allowlists, formatting, building, compiler failures, and output limits. Environment-dependent tests skip when the relevant tool is not installed. `test:course` checks all **45 Zig reference solutions and starters** across both paths. `test:tigerbeetle` checks all **14 live/source/upstream reference solutions and starters**, including linked rollback/retry, allocation-independent account policies, real restart persistence, and the actual upstream test.
 
 `test:alternatives` also compiles eight equivalent implementations, including comparisons versus @min/@max, typed widening versus @as, checked arithmetic without an overflow builtin, and @splat versus element assignment. These pass the same normal course checks.
 
@@ -153,9 +156,10 @@ An optional browser check lives in `scripts/check-ui.mjs`. It requires `playwrig
 npm install --prefix /tmp/zig-tigerbeetle-course-browser-qa --no-package-lock playwright-core
 PLAYWRIGHT_MODULE=/tmp/zig-tigerbeetle-course-browser-qa/node_modules/playwright-core/index.mjs node scripts/check-ui.mjs
 PLAYWRIGHT_MODULE=/tmp/zig-tigerbeetle-course-browser-qa/node_modules/playwright-core/index.mjs npm run test:vim
+PLAYWRIGHT_MODULE=/tmp/zig-tigerbeetle-course-browser-qa/node_modules/playwright-core/index.mjs npm run test:display
 ```
 
-Set `CHROMIUM_BIN` if Chromium is not at `/usr/bin/chromium`. The check uses disposable progress storage and covers desktop/mobile layouts, editing, reload persistence, real compiler results, quizzes, hints, the solution dialog, the playground, and absence of external requests. The Vim check covers Normal/Insert/Visual/block modes, motions, counts, operators, text objects, undo/redo, search, draft persistence, read-only tests, matching font sizes, compact command panels, and offline loading. Screenshots are written to `/tmp/zig-tigerbeetle-course-*.png`.
+Set `CHROMIUM_BIN` if Chromium is not at `/usr/bin/chromium`. The check uses disposable progress storage and covers desktop/mobile layouts, editing, reload persistence, real compiler results, quizzes, hints, the solution dialog, the playground, and absence of external requests. The Vim check covers Normal/Insert/Visual/block modes, motions, counts, operators, text objects, undo/redo, search, draft persistence, read-only tests, matching font sizes, compact command panels, and offline loading. The display check verifies independent font sizes, reload persistence, draft retention, regular/Vim editor alignment, reset controls, and layouts from 320 to 1440 pixels wide. Screenshots are written to `/tmp/zig-tigerbeetle-course-*.png`.
 
 ## Extend
 

@@ -1,0 +1,101 @@
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { createApp } from '../server.mjs';
+
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
+const data = await mkdtemp(path.join(os.tmpdir(), 'zig-course-display-'));
+const server = createApp({ dataDirectory: data });
+await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+const base = `http://127.0.0.1:${server.address().port}`;
+let browser;
+try {
+  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_BIN || '/usr/bin/chromium', headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const font = selector => page.locator(selector).first().evaluate(element => getComputedStyle(element).fontSize);
+  const settings = () => page.getByRole('button', { name: 'Display settings' }).click();
+  const done = () => page.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.goto(`${base}/#lesson/zig-decode-header`);
+  const input = page.getByRole('textbox', { name: 'Zig source code editor' });
+  await input.fill('pub fn main() void {}\n// retain my draft');
+  await settings();
+  await page.getByRole('button', { name: 'Increase code size', exact: true }).click();
+  assert.equal(await font('#code-input'), '18px');
+  assert.equal(await font('.prose'), '18px');
+  assert.equal(await font('.lesson-link'), '15px');
+  await page.locator('#font-code').fill('23');
+  await page.locator('#font-course').fill('22');
+  await page.locator('#font-nav').fill('19');
+  assert.equal(await font('#code-input'), '23px');
+  assert.equal(await font('#code-highlight'), '23px');
+  assert.equal(await font('#line-numbers'), '23px');
+  assert.equal(await font('.prose'), '22px');
+  assert.equal(await font('.lesson-link'), '19px');
+  await page.screenshot({ path: '/tmp/zig-course-display-settings.png' });
+  await done();
+  assert.match(await input.inputValue(), /retain my draft/);
+  await page.reload();
+  await input.waitFor();
+  assert.equal(await font('#code-input'), '23px');
+  assert.equal(await font('.prose'), '22px');
+  assert.equal(await font('.lesson-link'), '19px');
+  assert.match(await input.inputValue(), /retain my draft/);
+  await page.getByRole('button', { name: 'Vim: off', exact: true }).click();
+  await page.locator('.cm-content').waitFor();
+  assert.equal(await font('.cm-editor'), '23px');
+  await settings();
+  await page.getByRole('button', { name: 'Decrease code size', exact: true }).click();
+  await done();
+  assert.equal(await font('.cm-editor'), '22px');
+  await page.getByRole('tab', { name: 'Tests', exact: true }).click();
+  assert.equal(await page.locator('.cm-content[aria-readonly="true"]').count(), 1);
+  assert.equal(await page.locator('.vim-buffer:not([hidden]) .cm-editor').evaluate(el => getComputedStyle(el).fontSize), '22px');
+  await page.screenshot({ path: '/tmp/zig-course-display-editor.png' });
+  await settings();
+  await page.getByRole('button', { name: 'Reset sizes' }).click();
+  assert.equal(await page.locator('#font-code').inputValue(), '17');
+  assert.equal(await page.locator('#font-course').inputValue(), '18');
+  assert.equal(await page.locator('#font-nav').inputValue(), '15');
+  await page.locator('#font-code').fill('26');
+  await page.locator('#font-course').fill('26');
+  await page.locator('#font-nav').fill('22');
+  assert.ok(await page.getByRole('button', { name: 'Increase code size', exact: true }).isDisabled());
+  await done();
+  for (const width of [1440, 1024, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) {
+      await page.screenshot({ path: '/tmp/zig-course-display-overflow.png', fullPage: true });
+      console.error(await page.evaluate(() => [...document.querySelectorAll('main *')].filter(el => {
+        const r = el.getBoundingClientRect();
+        return r.width && r.right > innerWidth;
+      }).slice(0, 12).map(el => ({ tag: el.tagName, class: el.className, width: el.getBoundingClientRect().width }))));
+    }
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `overflow at ${width}`);
+    await settings();
+    assert.ok(await page.locator('#modal').evaluate(el => el.scrollWidth <= el.clientWidth), `dialog overflow at ${width}`);
+    await done();
+  }
+  await page.getByRole('button', { name: 'Toggle navigation' }).click();
+  assert.equal(await page.getByRole('button', { name: 'Toggle navigation' }).getAttribute('aria-expanded'), 'true');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByRole('button', { name: 'Toggle navigation' }).getAttribute('aria-expanded'), 'false');
+  await page.getByRole('button', { name: 'Toggle navigation' }).click();
+  await page.getByRole('button', { name: 'Close navigation', exact: true }).click({ position: { x: 315, y: 850 } });
+  await page.screenshot({ path: '/tmp/zig-course-display-mobile.png', fullPage: true });
+  await settings();
+  await page.getByRole('button', { name: 'Reset sizes' }).click();
+  await done();
+  await page.reload();
+  await page.getByRole('button', { name: 'Display settings' }).waitFor();
+  assert.equal(await font('.prose'), '18px');
+  assert.equal(await font('.cm-editor'), '17px');
+  assert.deepEqual(errors, []);
+  console.log('Display checks passed: independent sizes, previews, persistence, draft retention, Vim/tests, reset, bounds, and five viewport widths.');
+} finally {
+  await browser?.close();
+  await new Promise(resolve => server.close(resolve));
+  await rm(data, { recursive: true, force: true });
+}

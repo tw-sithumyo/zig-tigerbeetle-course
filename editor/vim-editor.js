@@ -119,6 +119,7 @@ export function createVimEditor({ parent, onChange, onCursor, onMode, onSave, on
       }
     },
     focus() { view?.focus(); },
+    measure() { for (const buffer of buffers.values()) buffer.view.requestMeasure(); },
     selection() { return view?.state.selection.main; },
     select(anchor, head = anchor) {
       const end = view.state.doc.length;

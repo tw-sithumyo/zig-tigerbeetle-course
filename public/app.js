@@ -46,6 +46,26 @@ let saveTimer, toastTimer, saveQueue = Promise.resolve();
 let vimEditor = null, vimLoad = null, vimGeneration = 0, vimEnabled = false;
 try { vimEnabled = (localStorage.getItem('zig-tigerbeetle-course-vim') ?? localStorage.getItem('zig-forge-vim')) === 'true'; } catch {}
 const chapterIcons = ['bolt', 'layers', 'branch', 'box', 'link', 'shield', 'chip', 'terminal'];
+const displayKey = 'zig-tigerbeetle-course-display';
+const fontSettings = {
+  code: { label: 'Code', description: 'Editor, tests, examples, and terminal output.', value: 17, min: 12, max: 26 },
+  course: { label: 'Course text', description: 'Lessons, assignments, hints, and quizzes.', value: 18, min: 14, max: 26 },
+  nav: { label: 'Navigation menu', description: 'Learning tracks, chapters, and lesson links.', value: 15, min: 12, max: 22 },
+};
+let displaySettings = Object.fromEntries(Object.entries(fontSettings).map(([key, setting]) => [key, setting.value]));
+try {
+  const saved = JSON.parse(localStorage.getItem(displayKey));
+  for (const [key, setting] of Object.entries(fontSettings)) {
+    if (typeof saved?.[key] === 'number' && Number.isFinite(saved[key])) {
+      displaySettings[key] = Math.max(setting.min, Math.min(setting.max, Math.round(saved[key])));
+    }
+  }
+} catch {}
+function applyDisplaySettings() {
+  for (const [key, size] of Object.entries(displaySettings)) document.documentElement.style.setProperty(`--${key}-font-size`, `${size}px`);
+  vimEditor?.measure();
+}
+applyDisplaySettings();
 
 async function api(route, body) {
   const response = await fetch(`/api/${route}`, body === undefined ? {} : {
@@ -122,8 +142,9 @@ function shell(content, breadcrumb = 'Course overview') {
   const currentChapter = course.chapters.find(ch => ch.lessons.some(lesson => lesson.id === currentId));
   const ready = currentLesson?.engine === 'source' ? env.tigerbeetle.sourceReady : currentLesson?.engine === 'upstream' ? env.tigerbeetle.sourceBuildReady : currentLesson?.engine === 'tigerbeetle' || currentTrack === 'tigerbeetle' && !currentLesson ? env.tigerbeetle.ready : env.ready;
   app.innerHTML = `<div class="shell">
+    <button class="nav-backdrop" data-action="menu" aria-label="Close navigation" tabindex="-1"></button>
     <aside class="sidebar" aria-label="Course navigation">
-      <a class="brand" href="#course"><span class="brand-mark">ϟ</span>Zig TigerBeetle Course <small>LOCAL</small></a>
+      <a class="brand" href="#course" aria-label="Zig TigerBeetle Course home"><span class="brand-mark">ϟ</span><span class="brand-name">Zig + TigerBeetle<span>THE LOCAL COURSE</span></span></a>
       <nav class="track-switcher" aria-label="Learning tracks">${course.tracks.map(track => `<a class="track-link ${track.id === currentTrack ? 'active' : ''}" href="#course/${track.id}" ${track.id === currentTrack ? 'aria-current="true"' : ''}>${icon(track.id === 'zig' ? 'code' : 'layers')}${escape(track.title)}</a>`).join('')}</nav>
       <nav class="main-nav">
         <a href="#course/${currentTrack}" class="nav-link ${currentView === 'course' ? 'active' : ''}">${icon('map')}Learning path<span class="nav-small" id="progress-count">${doneInTrack()}/${activeLessons().length}</span></a>
@@ -138,8 +159,8 @@ function shell(content, breadcrumb = 'Course overview') {
       <div class="sidebar-bottom"><button class="local-card" data-action="environment"><span>${icon('shield')}</span><span><strong>Your machine. Your progress.</strong><small>Learning stays local.</small></span><span class="status-dot ${ready ? '' : 'off'}"></span></button></div>
     </aside>
     <div class="main-wrap">
-      <header class="topbar"><div class="breadcrumbs"><button class="menu-button" data-action="menu" aria-label="Toggle navigation">${icon('menu')}</button><span class="course-crumb">Your workshop</span><span class="course-crumb">/</span><strong>${escape(breadcrumb)}</strong></div>
-        <div class="top-right"><button class="environment-link" data-action="environment"><span class="status-dot ${ready ? '' : 'off'}"></span><span class="env-label">${ready ? 'Local environment ready' : 'Set up your environment'}</span></button><span class="top-divider"></span><span class="xp">${icon('bolt')}<span id="xp-value">${progress.xp.toLocaleString()} XP</span></span><span class="avatar" title="Local learner">YOU</span></div>
+      <header class="topbar"><div class="breadcrumbs"><button class="menu-button" data-action="menu" aria-label="Toggle navigation" aria-expanded="false">${icon('menu')}</button><span class="course-crumb">Your workshop</span><span class="course-crumb">/</span><strong>${escape(breadcrumb)}</strong></div>
+        <div class="top-right"><button class="display-button" data-action="display" aria-label="Display settings"><span aria-hidden="true">Aa</span><span class="display-label">Display</span></button><button class="environment-link" data-action="environment"><span class="status-dot ${ready ? '' : 'off'}"></span><span class="env-label">${ready ? 'Local environment ready' : 'Set up your environment'}</span></button><span class="top-divider"></span><span class="xp">${icon('bolt')}<span id="xp-value">${progress.xp.toLocaleString()} XP</span></span></div>
       </header>
       <main id="main" tabindex="-1">${content}</main>
     </div></div>`;
@@ -430,10 +451,67 @@ function download(name, value, type = 'text/plain') {
 
 function showModal(title, content, actions = '') {
   const modal = $('#modal');
+  modal.classList.remove('display-dialog');
   modal.innerHTML = `<div class="modal-heading"><h2 id="modal-title">${escape(title)}</h2><button class="close-button" aria-label="Close dialog">${icon('close')}</button></div>${content}${actions ? `<div class="modal-actions">${actions}</div>` : ''}`;
   modal.querySelector('.close-button').addEventListener('click', () => modal.close());
   if (!modal.open) modal.showModal();
   modal.addEventListener('click', event => { if (event.target === modal) { const box = modal.getBoundingClientRect(); if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) modal.close(); } }, { once: true });
+}
+
+function displayModal() {
+  showModal('Make yourself comfortable',
+    `<p class="settings-intro">Three sizes. Your way of learning. Changes appear immediately and stay in this browser.</p>
+    <div class="font-settings">${Object.entries(fontSettings).map(([key, setting]) => `
+      <section class="font-setting">
+        <div class="font-setting-heading"><label for="font-${key}">${setting.label}</label><output for="font-${key}" id="font-${key}-value">${displaySettings[key]} px</output></div>
+        <p id="font-${key}-description">${setting.description}</p>
+        <div class="font-controls">
+          <button class="font-step" data-font="${key}" data-step="-1" aria-label="Decrease ${setting.label.toLowerCase()} size">−</button>
+          <input id="font-${key}" type="range" min="${setting.min}" max="${setting.max}" step="1" value="${displaySettings[key]}" aria-describedby="font-${key}-description">
+          <button class="font-step" data-font="${key}" data-step="1" aria-label="Increase ${setting.label.toLowerCase()} size">+</button>
+        </div>
+        <div class="font-preview preview-${key}">${key === 'code' ? '<code>const amount: u128 = 1250;</code>' : key === 'course' ? 'Small steps. Real systems skills.' : '01 &nbsp; Your next lesson →'}</div>
+      </section>`).join('')}</div>
+    <p class="settings-feedback" role="status" id="display-save-status">Sizes are saved independently of your course progress.</p>`,
+    '<button class="button quiet" id="display-reset">Reset sizes</button><button class="button primary" id="display-done">Done</button>');
+  $('#modal').classList.add('display-dialog');
+  const sync = () => {
+    applyDisplaySettings();
+    for (const [key, setting] of Object.entries(fontSettings)) {
+      $(`#font-${key}`).value = displaySettings[key];
+      $(`#font-${key}-value`).textContent = `${displaySettings[key]} px`;
+      $(`#font-${key}`).setAttribute('aria-valuetext', `${displaySettings[key]} pixels`);
+      for (const button of document.querySelectorAll(`[data-font="${key}"]`)) {
+        button.disabled = Number(button.dataset.step) < 0 ? displaySettings[key] <= setting.min : displaySettings[key] >= setting.max;
+      }
+    }
+  };
+  const save = () => {
+    sync();
+    try {
+      localStorage.setItem(displayKey, JSON.stringify(displaySettings));
+      $('#display-save-status').textContent = 'Saved in this browser.';
+    } catch { $('#display-save-status').textContent = 'Applied for this session. Browser storage is unavailable.'; }
+  };
+  for (const key of Object.keys(fontSettings)) {
+    $(`#font-${key}`).addEventListener('input', event => {
+      displaySettings[key] = Number(event.target.value);
+      save();
+    });
+  }
+  for (const button of document.querySelectorAll('[data-font]')) {
+    button.addEventListener('click', () => {
+      const key = button.dataset.font, setting = fontSettings[key];
+      displaySettings[key] = Math.max(setting.min, Math.min(setting.max, displaySettings[key] + Number(button.dataset.step)));
+      save();
+    });
+  }
+  $('#display-reset').onclick = () => {
+    displaySettings = Object.fromEntries(Object.entries(fontSettings).map(([key, setting]) => [key, setting.value]));
+    save();
+  };
+  $('#display-done').onclick = () => $('#modal').close();
+  sync();
 }
 
 async function environmentModal() {
@@ -468,7 +546,14 @@ function bindGlobalActions() {
       showModal('Vim keybindings', '<p class="modal-note">Turn on Vim in the editor toolbar. The mode indicator shows NORMAL, INSERT, or VISUAL. Your preference stays in this browser.</p><dl class="vim-key-help"><dt>Insert</dt><dd><code>i</code> before cursor · <code>a</code> after · <code>I</code>/<code>A</code> start/end · <code>o</code>/<code>O</code> new line · <code>Esc</code> back to Normal</dd><dt>Move</dt><dd><code>h j k l</code> · <code>w b e</code> words · <code>0 ^ $</code> line · <code>gg G</code> document · counts such as <code>3j</code></dd><dt>Select</dt><dd><code>v</code> characters · <code>V</code> lines · <code>Ctrl+v</code> block · motions extend selection · <code>Esc</code> exits</dd><dt>Edit</dt><dd><code>x</code>, <code>dd</code>, <code>dw</code>, <code>ciw</code> · <code>y</code>/<code>yy</code> yank · <code>p</code>/<code>P</code> paste · <code>u</code> undo · <code>Ctrl+r</code> redo · <code>.</code> repeat</dd><dt>Search and save</dt><dd><code>/pattern</code>, <code>n</code>/<code>N</code> · <code>:w</code> saves the local draft · <code>Ctrl/⌘+Enter</code> checks or runs</dd></dl><p class="modal-note">Tests remain read-only. These are Vim-style browser keybindings; your local Neovim plugins and configuration are not loaded. Use Tab to move focus in Normal mode, or switch Vim off for the regular editor.</p>');
       return;
     }
-    if (action === 'menu') return $('.shell').classList.toggle('nav-open');
+    if (action === 'menu') {
+      const open = $('.shell').classList.toggle('nav-open');
+      $('.menu-button').setAttribute('aria-expanded', String(open));
+      if (open) $('.sidebar a').focus();
+      else $('.menu-button').focus();
+      return;
+    }
+    if (action === 'display') return displayModal();
     if (action === 'environment') return environmentModal();
     if (action === 'export') return download('zig-tigerbeetle-course-progress.json', JSON.stringify(progress, null, 2), 'application/json');
     if (action === 'download') return download(nonZig() ? editorName() : `${currentId === 'playground' ? 'main' : currentId}.zig`, sourceCode());
@@ -552,6 +637,11 @@ async function route() {
 
 window.addEventListener('hashchange', route);
 window.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('#modal').open && $('.shell')?.classList.contains('nav-open')) {
+    $('.shell').classList.remove('nav-open');
+    $('.menu-button').setAttribute('aria-expanded', 'false');
+    $('.menu-button').focus();
+  }
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && $('#code-input') && !$('#modal').open) { event.preventDefault(); execute(currentId === 'playground' ? 'run' : 'check'); }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && $('#code-input')) { event.preventDefault(); clearTimeout(saveTimer); persistDraft(currentId, sourceCode()).then(() => toast('Code saved locally.')); }
 });
